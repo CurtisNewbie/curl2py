@@ -6,6 +6,7 @@ import (
 
 	"github.com/curtisnewbie/miso/encoding"
 	"github.com/curtisnewbie/miso/util"
+	"golang.design/x/clipboard"
 )
 
 var (
@@ -17,15 +18,32 @@ func main() {
 	flag.BoolVar(&Debug, "debug", false, "Debug")
 	flag.StringVar(&Input, "input", "", "Input File")
 	flag.Parse()
-	if Input == "" {
-		util.Printlnf("Missing curl command")
+
+	var curl string
+	if Input != "" {
+		f, err := util.ReadFileAll(Input)
+		util.Must(err)
+		curl = util.UnsafeByt2Str(f)
+	} else {
+		err := clipboard.Init()
+		util.DebugPrintlnf(Debug, "clipboard init")
+		if err == nil {
+			txt := clipboard.Read(clipboard.FmtText)
+			if txt != nil {
+				s := util.UnsafeByt2Str(txt)
+				if strings.Contains(strings.ToLower(s), "curl") {
+					curl = s
+				}
+			}
+		}
+	}
+
+	if curl == "" {
+		util.Printlnf("Missing curl command, either specify input file or copy the curl command to clipboard.")
 		return
 	}
 
-	curl, err := util.ReadFileAll(Input)
-	util.Must(err)
-
-	inst, ok := TryParseCurl(util.UnsafeByt2Str(curl))
+	inst, ok := TryParseCurl(curl)
 	if !ok {
 		util.Printlnf("Failed to parse curl command")
 		return
@@ -34,8 +52,8 @@ func main() {
 	util.DebugPrintlnf(Debug, "%#v", inst)
 
 	py := GenRequests(inst)
-	util.Printlnf("Generated: \n\n")
 	print(py)
+	println()
 }
 
 func GenRequests(inst Instruction) string {
