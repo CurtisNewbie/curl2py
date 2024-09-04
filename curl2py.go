@@ -140,7 +140,7 @@ func TryParseCurlAst(curl string) (inst Instruction, ok bool) {
 		util.DebugPrintlnf(Debug, "next tok: %v", tok)
 		switch tok {
 		case "-H":
-			k, v, ok := util.SplitKV(p.Next(), ":")
+			k, v, ok := util.SplitKV(unquote(p.Next()), ":")
 			if ok {
 				inst.Headers[k] = v
 			}

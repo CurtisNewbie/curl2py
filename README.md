@@ -1,6 +1,6 @@
 # curl2py
 
-Convert curl to python3 Requests script, only support curl copied from Chrome (the curl is not properly parsed :D). Either specify your input file which contains the curl script or copy the script to clipboard then run the program.
+Convert curl to python3 script. Either specify your input file which contains the curl script or copy the script to clipboard then run the program.
 
 ```sh
 $ go install .
