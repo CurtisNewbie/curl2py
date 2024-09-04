@@ -20,7 +20,7 @@ curl 'http://localhost/ping' \
   -H 'sec-ch-ua-mobile: ?0' \
   -H 'sec-ch-ua-platform: "macOS"'
 	`
-	inst, ok := TryParseCurlAst(s1)
+	inst, ok := ParseCurl(s1)
 	if !ok {
 		t.FailNow()
 	}
@@ -46,7 +46,7 @@ curl 'http://localhost/ping' \
   -H 'sec-ch-ua-platform: "macOS"' \
   -d '{}'
 	`
-	inst, ok := TryParseCurlAst(s1)
+	inst, ok := ParseCurl(s1)
 	if !ok {
 		t.FailNow()
 	}
@@ -58,7 +58,7 @@ curl 'http://localhost/ping' \
 
 func TestTryParseCurlUsingParser(t *testing.T) {
 	s1 := `
-curl -X POST 'http://localhost/ping'
+curl -X PUT 'http://localhost/ping'
   -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
   -H 'Accept-Language: en,zh-CN;q=0.9,zh;q=0.8'
   -H 'Cache-Control: no-cache'
@@ -75,11 +75,11 @@ curl -X POST 'http://localhost/ping'
   -H 'sec-ch-ua-platform: "macOS"'
   -d '{ "name" : "abc" }'
 	`
-	inst, ok := TryParseCurlAst(s1)
+	inst, ok := ParseCurl(s1)
 	if !ok {
 		t.FailNow()
 	}
-	if inst.Method != "POST" {
+	if inst.Method != "PUT" {
 		t.FailNow()
 	}
 	t.Logf("inst.url: %v", inst.Url)
