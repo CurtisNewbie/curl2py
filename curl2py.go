@@ -43,7 +43,7 @@ func main() {
 		return
 	}
 
-	inst, ok := TryParseCurl(curl)
+	inst, ok := TryParseCurlAst(curl)
 	if !ok {
 		util.Printlnf("Failed to parse curl command")
 		return
@@ -90,7 +90,7 @@ type Instruction struct {
 	Payload string
 }
 
-// TODO: improve this parser, it's now only useful for well-structured curl 'copied' from Chrome
+// deprecated
 func TryParseCurl(curl string) (inst Instruction, ok bool) {
 	if util.IsBlankStr(curl) {
 		return
@@ -120,7 +120,47 @@ func TryParseCurl(curl string) (inst Instruction, ok bool) {
 		inst.Method = "POST"
 	}
 
-	util.DebugPrintlnf(Debug, "%+v", inst)
+	util.DebugPrintlnf(Debug, "inst: %+v", inst)
+	ok = true
+	return
+}
+
+func TryParseCurlAst(curl string) (inst Instruction, ok bool) {
+	if util.IsBlankStr(curl) {
+		return
+	}
+	inst.Headers = map[string]string{}
+	if util.IsBlankStr(inst.Method) {
+		inst.Method = "GET"
+	}
+
+	p := NewCurlParser(curl)
+	for p.HasNext() {
+		tok := p.Next()
+		util.DebugPrintlnf(Debug, "next tok: %v", tok)
+		switch tok {
+		case "-H":
+			k, v, ok := util.SplitKV(p.Next(), ":")
+			if ok {
+				inst.Headers[k] = v
+			}
+		case "-X":
+			inst.Method = p.Next()
+		case "-d", "--data-raw":
+			inst.Payload = p.Next()
+		case "curl":
+		default:
+			util.DebugPrintlnf(Debug, "default tok: %v", tok)
+			if tok != "" {
+				inst.Url = unquote(tok)
+			}
+		}
+	}
+	if inst.Method == "GET" && inst.Payload != "" {
+		inst.Method = "POST"
+	}
+
+	util.DebugPrintlnf(Debug, "inst: %+v", inst)
 	ok = true
 	return
 }
@@ -179,4 +219,118 @@ func parseCurlDest(v string) (string, bool) {
 func curlSegments(curl string) []string {
 	// TODO: should support curl that are not so well structured
 	return strings.Split(curl, "\\")
+}
+
+func NewCurlParser(curl string) *CurlParser {
+	rc := []rune(curl)
+	return &CurlParser{curl: curl, rcurl: rc, pos: 0, rlen: len(rc)}
+}
+
+type CurlParser struct {
+	curl  string
+	rcurl []rune
+	rlen  int
+	pos   int
+}
+
+func (c *CurlParser) HasNext() bool {
+	return c.pos < len(c.rcurl)
+}
+
+func (c *CurlParser) inRange(n int) bool {
+	return c.pos+n < len(c.rcurl)
+}
+
+func (c *CurlParser) peek(n int) rune {
+	return c.rcurl[c.pos+n]
+}
+
+func (c *CurlParser) move(n int) {
+	c.pos += n
+}
+
+func (c *CurlParser) parseCmdKey() string {
+	i := 0
+	for c.inRange(i) {
+		switch c.peek(i) {
+		case ' ', '\t', '\n':
+			s := c.rcurl[c.pos : c.pos+i]
+			c.move(i)
+			return string(s)
+		}
+		i++
+	}
+	return ""
+}
+
+func (c *CurlParser) parseStr() string {
+	stack := util.NewStack[rune](10)
+	cur := c.peek(0)
+	stack.Push(cur)
+	i := 1
+	escape := false
+	for c.inRange(i) && !stack.Empty() {
+		p := c.peek(i)
+		switch p {
+		case '\'', '"':
+			if escape {
+				escape = false
+			} else {
+				if p == cur {
+					stack.Pop()
+					cur, _ = stack.Peek()
+				} else {
+					stack.Push(p)
+					cur = p
+				}
+			}
+		case '\\':
+			escape = !escape
+		}
+		i++
+	}
+	s := c.rcurl[c.pos : c.pos+i]
+	c.move(i)
+	vs := string(s)
+	util.DebugPrintlnf(Debug, "parseStr, s: %v", vs)
+	return vs
+}
+
+func (c *CurlParser) isSpace(n int) bool {
+	return c.peek(n) == ' ' || c.peek(n) == '\n' || c.peek(n) == '\t' || c.peek(n) == '\\'
+}
+
+func (c *CurlParser) skipSpaces() {
+	for c.HasNext() && c.isSpace(0) {
+		c.move(1)
+	}
+}
+
+func (c *CurlParser) parseWords() string {
+	c.skipSpaces()
+	i := 0
+	for c.inRange(i) && !c.isSpace(i) {
+		i++
+	}
+	s := c.rcurl[c.pos : c.pos+i]
+	c.move(i)
+	return string(s)
+}
+
+func (c *CurlParser) Next() (tok string) {
+	c.skipSpaces()
+
+	if !c.HasNext() {
+		return tok
+	}
+
+	curr := c.peek(0)
+	switch curr {
+	case '-':
+		return c.parseCmdKey()
+	case '\'', '"':
+		return c.parseStr()
+	default:
+		return c.parseWords()
+	}
 }
