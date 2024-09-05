@@ -110,7 +110,7 @@ func ParseCurl(curl string) (inst Instruction, ok bool) {
 				inst.Headers[k] = v
 			}
 		case "-X":
-			inst.Method = p.Next()
+			inst.Method = unquote(p.Next())
 		case "-d", "--data-raw":
 			inst.Payload = p.Next()
 		case "curl":
