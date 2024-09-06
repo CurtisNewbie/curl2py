@@ -62,7 +62,10 @@ func GenRequests(inst Instruction) string {
 	if len(inst.Headers) > 0 {
 		headers, _ = encoding.SWriteJson(inst.Headers)
 	}
-	if inst.Payload != "" {
+	if len(inst.Form) > 0 {
+		data, _ = encoding.SWriteJson(inst.Form)
+	}
+	if !util.IsBlankStr(inst.Payload) {
 		data = inst.Payload
 	}
 
@@ -88,6 +91,7 @@ type Instruction struct {
 	Method  string
 	Headers map[string]string
 	Payload string
+	Form    map[string]string
 }
 
 func ParseCurl(curl string) (inst Instruction, ok bool) {
@@ -95,6 +99,7 @@ func ParseCurl(curl string) (inst Instruction, ok bool) {
 		return
 	}
 	inst.Headers = map[string]string{}
+	inst.Form = map[string]string{}
 	if util.IsBlankStr(inst.Method) {
 		inst.Method = "GET"
 	}
@@ -111,6 +116,11 @@ func ParseCurl(curl string) (inst Instruction, ok bool) {
 			}
 		case "-X":
 			inst.Method = unquote(p.Next())
+		case "-F":
+			k, v, ok := util.SplitKV(unquote(p.Next()), "=")
+			if ok {
+				inst.Form[k] = v
+			}
 		case "-d", "--data-raw":
 			inst.Payload = p.Next()
 		case "curl":

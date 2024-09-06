@@ -56,7 +56,7 @@ curl 'http://localhost/ping' \
 	t.Logf("inst: %#v", inst)
 }
 
-func TestTryParseCurlUsingParser(t *testing.T) {
+func TestTryParseCurl3(t *testing.T) {
 	s1 := `
 curl -X PUT 'http://localhost/ping'
   -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
@@ -88,4 +88,21 @@ curl -X PUT 'http://localhost/ping'
 		t.Logf("header: %v -> %v", k, v)
 	}
 	t.Logf("inst.payload: %v", inst.Payload)
+}
+
+func TestTryParseCurl4(t *testing.T) {
+	s1 := `
+  curl -X POST "http://localhost:9434/compensation/message-queue" -F 'partitionYearMonth=202308' -F 'queueNo=ECQ1689532030817288192'
+	`
+	inst, ok := ParseCurl(s1)
+	if !ok {
+		t.FailNow()
+	}
+	t.Logf("inst.url: %v", inst.Url)
+	t.Logf("inst.method: %v", inst.Method)
+	for k, v := range inst.Headers {
+		t.Logf("header: %v -> %v", k, v)
+	}
+	t.Logf("inst.payload: %v", inst.Payload)
+	t.Logf("inst.form: %v", inst.Form)
 }
