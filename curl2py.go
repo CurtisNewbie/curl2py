@@ -4,7 +4,7 @@ import (
 	"flag"
 	"strings"
 
-	"github.com/curtisnewbie/miso/encoding"
+	"github.com/curtisnewbie/miso/encoding/json"
 	"github.com/curtisnewbie/miso/util"
 	"golang.design/x/clipboard"
 )
@@ -60,10 +60,10 @@ func GenRequests(inst Instruction) string {
 	headers := "{}"
 	data := "None"
 	if len(inst.Headers) > 0 {
-		headers, _ = encoding.SWriteJson(inst.Headers)
+		headers, _ = json.SWriteIndent(inst.Headers)
 	}
 	if len(inst.Form) > 0 {
-		data, _ = encoding.SWriteJson(inst.Form)
+		data, _ = json.SWriteIndent(inst.Form)
 	}
 	if !util.IsBlankStr(inst.Payload) {
 		data = inst.Payload

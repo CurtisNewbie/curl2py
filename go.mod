@@ -3,7 +3,7 @@ module github.com/curtisnewbie/curl2py
 go 1.22.3
 
 require (
-	github.com/curtisnewbie/miso v0.1.6-0.20240902074804-55c3cba3ac37
+	github.com/curtisnewbie/miso v0.1.12-beta.1.0.20241111060900-5607e7eaa585
 	golang.design/x/clipboard v0.7.0
 )
 
