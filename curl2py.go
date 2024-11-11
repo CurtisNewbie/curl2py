@@ -15,6 +15,7 @@ var (
 )
 
 func main() {
+	util.Printlnf("\ncurl2py version: %v\n", Version)
 	flag.BoolVar(&Debug, "debug", false, "Debug")
 	flag.StringVar(&Input, "input", "", "Input File")
 	flag.Parse()

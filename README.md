@@ -6,6 +6,9 @@ Convert curl to python3 script. Either specify your input file which contains th
 $ go install .
 
 $ curl2py -h
+
+curl2py version: v0.0.3
+
 Usage of curl2py:
   -debug
         Debug
