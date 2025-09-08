@@ -124,6 +124,8 @@ func ParseCurl(curl string) (inst Instruction, ok bool) {
 			}
 		case "-d", "--data-raw":
 			inst.Payload = p.Next()
+		case "-b":
+			_ = p.Next() // cookie
 		case "curl":
 		default:
 			util.DebugPrintlnf(Debug, "default tok: %v", tok)
